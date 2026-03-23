@@ -18,7 +18,7 @@ type
 
     FCaseDefinition: TCaseDefinition;
     FIgnoreEmptyValues: Boolean;
-
+    FDateTimeFormat: string;
     constructor CreatePrivate;
   public
     constructor Create;
@@ -27,7 +27,8 @@ type
 
     function CaseDefinition(AValue: TCaseDefinition): TGBJSONConfig; overload;
     function CaseDefinition: TCaseDefinition; overload;
-
+    function DateTimeFormat(AValue: string): TGBJSONConfig; overload;
+    function DateTimeFormat: string; overload;
     function IgnoreEmptyValues(AValue: Boolean): TGBJSONConfig; overload;
     function IgnoreEmptyValues: Boolean; overload;
   end;
@@ -72,6 +73,16 @@ end;
 function TGBJSONConfig.IgnoreEmptyValues: Boolean;
 begin
   Result := FIgnoreEmptyValues;
+end;
+
+function TGBJSONConfig.DateTimeFormat: string;
+begin
+  result := FDateTimeFormat;
+end;
+
+function TGBJSONConfig.DateTimeFormat(AValue: string): TGBJSONConfig;
+begin
+  FDateTimeFormat := AValue;
 end;
 
 function TGBJSONConfig.IgnoreEmptyValues(AValue: Boolean): TGBJSONConfig;
