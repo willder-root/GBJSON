@@ -14,10 +14,19 @@ type
   TGBJSONDatetimeHelper = record helper for TDateTime
   private
     function Iso8601ToDateTime(AValue: string): TDateTime;
+//    function NormalizeMask(const S: string): string;
+//    function DetectTimeSeparator(const S: string): Char;
+//    function DetectDateSeparator(const S: string): Char;
+//    function SplitDateAndTime(const AMask: string; out ADatePart, ATimePart: string): Boolean;
+    function BuildFormatSettingsFromMask(
+      const AMask: string;
+      const ALocale: string = 'en-US'
+    ): TFormatSettings;
   public
     function DateTimeToIso8601: string;
     function Format(ADateFormat: string): string;
     function FormatYYYY_MM_DD: string;
+    procedure FromCustomFormatToDateTime(AValue, AformatDateTime,ALocale: string);
     procedure FromIso8601ToDateTime(AValue: string);
   end;
 
@@ -47,6 +56,17 @@ end;
 function TGBJSONDatetimeHelper.FormatYYYY_MM_DD: string;
 begin
   Result := Format('yyyy-MM-dd');
+end;
+
+procedure TGBJSONDatetimeHelper.FromCustomFormatToDateTime(AValue, AformatDateTime, ALocale: string);
+var
+  formatSettings: TFormatSettings;
+begin
+  if ALocale.Trim.IsEmpty then
+    formatSettings := BuildFormatSettingsFromMask(AformatDateTime)
+  else
+    formatSettings :=BuildFormatSettingsFromMask(AformatDateTime,ALocale);
+  self := StrToDate(AValue,formatSettings);
 end;
 
 procedure TGBJSONDatetimeHelper.fromIso8601ToDateTime(AValue: string);
@@ -103,5 +123,111 @@ begin
   end;
 end;
 
+function DetectDateSeparator(const S: string): Char;
+var
+  C: Char;
+begin
+  for C in S do
+    if CharInSet(C, ['/', '-', '.']) then
+      Exit(C);
+  Result := '/';
+end;
+
+function DetectTimeSeparator(const S: string): Char;
+var
+  C: Char;
+begin
+  for C in S do
+    if CharInSet(C, [':', '.']) then
+      Exit(C);
+  Result := ':';
+end;
+
+function NormalizeMask(const S: string): string;
+begin
+  Result := Trim(S);
+  Result := StringReplace(Result, 'HH', 'hh', [rfReplaceAll]);
+  Result := StringReplace(Result, 'H', 'h', [rfReplaceAll]);
+  Result := StringReplace(Result, 'NN', 'nn', [rfReplaceAll]);
+  Result := StringReplace(Result, 'N', 'n', [rfReplaceAll]);
+  Result := StringReplace(Result, 'SS', 'ss', [rfReplaceAll]);
+  Result := StringReplace(Result, 'S', 's', [rfReplaceAll]);
+  Result := StringReplace(Result, 'YYYY', 'yyyy', [rfReplaceAll]);
+  Result := StringReplace(Result, 'YYY', 'yyy', [rfReplaceAll]);
+  Result := StringReplace(Result, 'YY', 'yy', [rfReplaceAll]);
+  Result := StringReplace(Result, 'DD', 'dd', [rfReplaceAll]);
+  Result := StringReplace(Result, 'D', 'd', [rfReplaceAll]);
+  Result := StringReplace(Result, 'MM', 'mm', [rfReplaceAll]);
+end;
+
+function SplitDateAndTime(const AMask: string; out ADatePart, ATimePart: string): Boolean;
+var
+  P: Integer;
+  S: string;
+begin
+  S := Trim(AMask);
+  P := Pos(' ', S);
+
+  if P > 0 then
+  begin
+    ADatePart := Trim(Copy(S, 1, P - 1));
+    ATimePart := Trim(Copy(S, P + 1, MaxInt));
+  end
+  else
+  begin
+    if (Pos(':', S) > 0) or (Pos('h', LowerCase(S)) > 0) or (Pos('n', LowerCase(S)) > 0) then
+    begin
+      ADatePart := '';
+      ATimePart := S;
+    end
+    else
+    begin
+      ADatePart := S;
+      ATimePart := '';
+    end;
+  end;
+
+  Result := (ADatePart <> '') or (ATimePart <> '');
+end;
+
+function TGBJSONDatetimeHelper.BuildFormatSettingsFromMask(
+  const AMask: string;
+  const ALocale: string
+): TFormatSettings;
+var
+  Mask: string;
+  DatePart: string;
+  TimePart: string;
+  LowerTime: string;
+begin
+  Result := TFormatSettings.Create(ALocale);
+  Mask := NormalizeMask(AMask);
+
+  if not SplitDateAndTime(Mask, DatePart, TimePart) then
+    Exit;
+
+  if DatePart <> '' then
+  begin
+    Result.DateSeparator := DetectDateSeparator(DatePart);
+    Result.ShortDateFormat := DatePart;
+    Result.LongDateFormat := DatePart;
+  end;
+
+  if TimePart <> '' then
+  begin
+    Result.TimeSeparator := DetectTimeSeparator(TimePart);
+    Result.ShortTimeFormat := TimePart;
+    Result.LongTimeFormat := TimePart;
+
+    LowerTime := LowerCase(TimePart);
+    if (Pos('am/pm', LowerTime) > 0) or (Pos('a/p', LowerTime) > 0) then
+    begin
+      Result.TimeAMString := 'AM';
+      Result.TimePMString := 'PM';
+    end;
+  end;
+end;
+
 end.
+
 
