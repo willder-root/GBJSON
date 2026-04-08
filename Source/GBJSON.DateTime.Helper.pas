@@ -14,10 +14,6 @@ type
   TGBJSONDatetimeHelper = record helper for TDateTime
   private
     function Iso8601ToDateTime(AValue: string): TDateTime;
-//    function NormalizeMask(const S: string): string;
-//    function DetectTimeSeparator(const S: string): Char;
-//    function DetectDateSeparator(const S: string): Char;
-//    function SplitDateAndTime(const AMask: string; out ADatePart, ATimePart: string): Boolean;
     function BuildFormatSettingsFromMask(
       const AMask: string;
       const ALocale: string = 'en-US'
@@ -66,7 +62,7 @@ begin
     formatSettings := BuildFormatSettingsFromMask(AformatDateTime)
   else
     formatSettings :=BuildFormatSettingsFromMask(AformatDateTime,ALocale);
-  self := StrToDate(AValue,formatSettings);
+  self := StrToDateTime(AValue,formatSettings);
 end;
 
 procedure TGBJSONDatetimeHelper.fromIso8601ToDateTime(AValue: string);
