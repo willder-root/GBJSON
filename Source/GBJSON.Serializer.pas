@@ -55,6 +55,10 @@ constructor TGBJSONSerializer<T>.Create(AUseIgnore: Boolean);
 begin
   inherited Create;
   FUseIgnore := AUseIgnore;
+  if not TGBJSONConfig.GetInstance.DateTimeFormat.Trim.IsEmpty then
+    DateTimeFormat(TGBJSONConfig.GetInstance.DateTimeFormat.Trim);
+  if not TGBJSONConfig.GetInstance.DateTimeLocale.Trim.IsEmpty then
+    DateTimeLocale(TGBJSONConfig.GetInstance.DateTimeLocale.Trim);
 end;
 
 function TGBJSONSerializer<T>.JsonArrayToList(AValue: TJSONArray): TObjectList<T>;
@@ -283,7 +287,9 @@ var
   LJSONDate: TJSONValue;
   LDate: TDateTime;
 begin
-  if AJSONValue.TryGetValue<TJSONValue>('$date', LJSONDate) then
+  if not FDateTimeFormat.Trim.IsEmpty then
+    LDate.FromCustomFormatToDateTime(AJSONValue.Value,FDateTimeFormat.Trim ,FDateTimeLocale.Trim)
+  else if AJSONValue.TryGetValue<TJSONValue>('$date', LJSONDate) then
     LDate.FromIso8601ToDateTime(LJSONDate.Value)
   else
     LDate.FromIso8601ToDateTime(AJSONValue.Value);
