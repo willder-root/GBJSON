@@ -52,6 +52,8 @@ uses
 constructor TGBJSONDeserializer<T>.Create(AUseIgnore: Boolean = True);
 begin
   inherited Create;
+  if not TGBJSONConfig.GetInstance.DateTimeFormat.Trim.IsEmpty then
+    DateTimeFormat(TGBJSONConfig.GetInstance.DateTimeFormat.Trim);
   FUseIgnore := AUseIgnore;
 end;
 
