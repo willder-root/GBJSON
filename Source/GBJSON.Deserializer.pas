@@ -223,6 +223,9 @@ begin
   if AProperty.IsString then
     Exit('"' + LValue.AsString.Replace('\', '\\').Replace('"', '\"') + '"');
 
+  if AProperty.IsInt64 then
+    Exit(LValue.AsInt64.ToString);
+
   if AProperty.IsInteger then
     Exit(LValue.AsInteger.ToString);
 
@@ -247,6 +250,9 @@ begin
     begin
       if LType.TypeKind.IsString then
         Result := Result + '"' + LValue.GetArrayElement(I).AsString.Replace('"', '\"') + '"'
+      else
+      if LType.TypeKind.IsInt64 then
+        Result := Result + LValue.GetArrayElement(I).AsInt64.ToString
       else
       if LType.TypeKind.IsInteger then
         Result := Result + LValue.GetArrayElement(I).AsInteger.ToString

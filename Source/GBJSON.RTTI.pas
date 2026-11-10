@@ -40,6 +40,7 @@ type
   public
     function IsEnum: Boolean;
     function IsString: Boolean;
+    function IsInt64: Boolean;
     function IsInteger: Boolean;
     function IsArray: Boolean;
     function IsObject: Boolean;
@@ -57,6 +58,7 @@ type
     function IsList: Boolean;
     function IsString: Boolean;
     function IsInteger: Boolean;
+    function IsInt64: Boolean;
     function IsEnum: Boolean;
     function IsArray: Boolean;
     function IsObject: Boolean;
@@ -76,6 +78,8 @@ type
     function JSONName: string;
     function GetAttribute<T: TCustomAttribute>: T;
     function GetListType(AObject: TObject): TRttiType;
+    function GetClassType: TRttiType;
+    function CreateObject: TObject;
   end;
 
   TGBObjectHelper = class helper for TObject
@@ -138,6 +142,20 @@ end;
 
 { TGBRTTIPropertyHelper }
 
+function TGBRTTIPropertyHelper.CreateObject: TObject;
+var
+  LObjectItem: TObject;
+  LObjectType: TRttiType;
+begin
+  LObjectType := Self.GetClassType;
+  LObjectItem := LObjectType.AsInstance.MetaclassType.Create;
+
+   if Self.IsList then
+    LObjectItem.InvokeMethod('create', [True]);
+
+  Result := LObjectItem;
+end;
+
 function TGBRTTIPropertyHelper.GetAttribute<T>: T;
 var
   I: Integer;
@@ -146,6 +164,11 @@ begin
   for I := 0 to Pred(Length(Self.GetAttributes)) do
     if Self.GetAttributes[I].ClassNameIs(T.className) then
       Exit(T( Self.GetAttributes[I]));
+end;
+
+function TGBRTTIPropertyHelper.GetClassType: TRttiType;
+begin
+  Result := TGBRTTI.GetInstance.FindType(Self.PropertyType.QualifiedName);
 end;
 
 function TGBRTTIPropertyHelper.GetListType(AObject: TObject): TRttiType;
@@ -254,6 +277,11 @@ begin
         Exit(True);
     end;
   end;
+end;
+
+function TGBRTTIPropertyHelper.IsInt64: Boolean;
+begin
+  Result := Self.PropertyType.TypeKind.IsInt64;
 end;
 
 function TGBRTTIPropertyHelper.IsInteger: Boolean;
@@ -435,9 +463,14 @@ begin
   Result := Self = tkFloat;
 end;
 
+function TTypeKindHelper.IsInt64: Boolean;
+begin
+  Result := Self = tkInt64;
+end;
+
 function TTypeKindHelper.IsInteger: Boolean;
 begin
-  Result := Self in [tkInt64, tkInteger];
+  Result := Self = tkInteger;
 end;
 
 function TTypeKindHelper.IsObject: Boolean;
