@@ -74,6 +74,7 @@ procedure TGBJSONSerializer<T>.JsonObjectToObject(AObject: TObject; AJsonObject:
 var
   LProperty: TRttiProperty;
   LJsonValue: TJSONValue;
+  LObjectItem: TObject;
 begin
   for LProperty in AType.GetProperties do
   begin
@@ -101,6 +102,12 @@ begin
         Continue;
       end;
 
+      if LProperty.IsInt64 then
+      begin
+        LProperty.SetValue(AObject, StrToInt64Def(LJsonValue.Value, 0));
+        Continue;
+      end;
+
       if LProperty.IsInteger then
       begin
         LProperty.SetValue(AObject, StrToIntDef(LJsonValue.Value, 0));
@@ -115,7 +122,15 @@ begin
 
       if LProperty.IsObject then
       begin
-        JsonObjectToObject(LProperty.GetValue(AObject).AsObject, TJSONObject(LJsonValue));
+        LObjectItem := LProperty.GetValue(AObject).AsObject;
+
+        if not Assigned(LObjectItem) then
+          LObjectItem := LProperty.CreateObject;
+
+        JsonObjectToObject(LObjectItem, TJSONObject(LJsonValue));
+
+        LProperty.SetValue(AObject, LObjectItem);
+
         Continue;
       end;
 
@@ -133,6 +148,12 @@ begin
 
       if LProperty.IsList then
       begin
+        LObjectItem := LProperty.GetValue(AObject).AsObject;
+
+        if not Assigned(LObjectItem) then
+          LObjectItem := LProperty.CreateObject;
+
+        LProperty.SetValue(AObject, LObjectItem);
         JsonObjectToObjectList(AObject, TJSONArray(LJsonValue), LProperty);
         Continue;
       end;
@@ -206,6 +227,9 @@ begin
       if LListType.TypeKind.IsString then
         LValue := TValue.From<string>(AJsonArray.Items[I].GetValue<string>)
       else
+      if LListType.TypeKind.IsInt64 then
+        LValue := TValue.From<Int64>(AJsonArray.Items[I].GetValue<Int64>)
+      else
       if LListType.TypeKind.IsFloat then
         LValue := TValue.From<Double>(AJsonArray.Items[I].GetValue<Double>)
       else
@@ -263,6 +287,9 @@ begin
   begin
     if LType.TypeKind.IsString then
       LValues[I] := TValue.From<string>(TJSONArray(AJSONValue).Items[I].Value)
+    else
+    if LType.TypeKind.IsInt64 then
+      LValues[I] := TValue.From<Int64>(TJSONArray(AJSONValue).Items[I].Value.ToInt64)
     else
     if LType.TypeKind.IsInteger then
       LValues[I] := TValue.From<Integer>(TJSONArray(AJSONValue).Items[I].Value.ToInteger)
